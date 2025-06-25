@@ -1,0 +1,12 @@
+Line y=17: Nothing
+Line y=31: Yes
+Line y=45: Yes
+Line y=59: Nothing
+Line y=73: Yes
+Line y=17: Nothing
+Line y=31: Yes
+Line y=45: Yes
+Line y=59: Nothing
+Line y=73: Yes
+Line y=87: Yes
+Line y=101: Yes

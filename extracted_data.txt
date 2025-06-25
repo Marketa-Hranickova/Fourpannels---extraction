@@ -1,0 +1,60 @@
+Hauptbeschwerde(bittenurEINEankreuzen) N J
+Schmerzen
+Kinderwunsch/Sterilität
+AbklärungsbedürftigerBefund
+Nachsorge
+Blutungsstörung/AUB
+----------------------------------------
+
+GrundderVorstellung(bitteankreuzen) N J
+Schmerzen
+Kinderwunsch/Sterilität
+Blutungsstörung/AUB
+Nachsorge
+PersistierendeEndometriose
+J Rezidivfall
+AbklärungsbedürftigerBefund
+----------------------------------------
+
+Erstvorstellung
+ZUWnachOP
+Kontrolleunter(kons.)Therapie
+Ergebnisbeurteilung
+Zweitmeinung
+----------------------------------------
+
+OP/HISTO-ANAMNESE DATUMderletztenOP:
+VorangegangeneBauch-OPs: Nein Ja
+VorangegangeneEndometriose-OPs: Nein Ja
+HistologischeSicherung: Nein Ja
+----------------------------------------
+
+KLINISCHEUNTERSUCHUNG/ unauffällig auffällig nicht
+Erstvorstellung durchgeführt
+Spekulum
+VaginalerTastbefund
+RektalerTastbefund
+Ultraschall
+SonstigeBildgebung
+(CT,MRTo.ING)
+----------------------------------------
+
+Endometriose: Nein Ja
+----------------------------------------
+
+Peritoneal
+Zystisch/ovariell
+Adenomyosis
+Tief-infiltrierende(TIE)
+----------------------------------------
+
+Niere/UreterL ParametriumL SUBR
+Niere/UreterR ParametriumR SRV
+Blase Darm Bauchdecke
+Uterus SUBL
+----------------------------------------
+
+
+Checkbox Results:
+
+
