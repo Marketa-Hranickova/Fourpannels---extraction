@@ -55,6 +55,16 @@ Uterus SUBL
 ----------------------------------------
 
 
-Checkbox Results:
-
-
+--- Checkbox Results (from crossing1, using Unicode '☒') ---
+Nothing
+Nothing
+Nothing
+Nothing
+Nothing
+Nothing
+Nothing
+Nothing
+Nothing
+Nothing
+Nothing
+Nothing
