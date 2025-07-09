@@ -1,107 +1,108 @@
-# /Users/marke/Documents/SpaCyNewProject/spacy_analysis.py
+import ollama
+import json
+import pandas as pd # Import the pandas library
 
-import spacy
-from spacy.matcher import Matcher # Make sure this import is at the top of your file or within the function
-
-def analyze_german_text(text):
+def ask_llama_about_text_structured(text_file_path):
     """
-    Loads a German spaCy model and performs basic NLP analysis on the given text.
+    Feeds text from a file to Ollama Llama 3 and asks questions,
+    expecting a structured JSON response.
     """
     try:
-        # Load the German language model
-        # Make sure you've run: python -m spacy download de_core_news_sm
-        nlp = spacy.load("de_core_news_sm")
-        print("German spaCy model loaded successfully.")
-    except OSError:
-        print("German spaCy model 'de_core_news_sm' not found.")
-        print("Please run: python -m spacy download de_core_news_sm")
-        return
+        with open(text_file_path, 'r', encoding='utf-8') as f:
+            document_text = f.read()
 
-    # Process the text with the loaded model
-    doc = nlp(text)
+        # Define the prompt to instruct Llama 3 to return JSON.
+        # We explicitly define the expected JSON structure within the prompt.
+        prompt = f"""
+        Analyze the following medical document and extract the requested information.
+        Respond *only* with a JSON object. If information is not explicitly present in the document, state "-".
+        Keep answers as concise as possible.
 
-    print("\n--- Tokenization and Part-of-Speech Tagging ---")
-    print("{:<15} {:<10} {:<10} {:<15}".format("Token", "Lemma", "POS", "Dependency"))
-    print("-" * 50)
-    for token in doc:
-        print(f"{token.text:<15} {token.lemma_:<10} {token.pos_:<10} {token.dep_:<15}")
+        Expected JSON format:
+        {{
+          "endometriosis": "Yes/No",
+          "patient_weight": "weight_value_and_unit_or_-",
+          "patient_height": "height_value_and_unit_or_-",
+          "hypermenorrhea_reported": "Yes/No",
+          "metrorrhagia_reported": "Yes/No_and_elaboration_if_yes_or_-"
+        }}
 
-    print("\n--- Named Entity Recognition (NER) ---")
-    if doc.ents:
-        for ent in doc.ents:
-            # spacy.explain might return None if no explanation is available for a given label
-            explanation = spacy.explain(ent.label_) if spacy.explain(ent.label_) else "N/A"
-            print(f"Entity: '{ent.text}' | Type: {ent.label_} | Explanation: {explanation}")
-    else:
-        print("No named entities found.")
+        Document:
+        ---
+        {document_text}
+        ---
+        """
 
-    print("\n--- Sentence Segmentation ---")
-    for i, sent in enumerate(doc.sents):
-        print(f"Sentence {i+1}: {sent.text}")
+        print(f"Sending request to Llama 3 for structured extraction from '{text_file_path}'...")
 
-    print("\n--- Custom Keyword Extraction Example (Medical context) ---")
-    medical_keywords = [
-        "Schmerz", "Fieber", "Husten", "Diagnose", "Therapie",
-        "Medikament", "Patient", "Arzt", "Krankenhaus", "Symptom"
-    ]
-    
-    found_medical_terms = []
-    lower_text = text.lower() 
-    for keyword in medical_keywords:
-        if keyword.lower() in lower_text:
-            found_medical_terms.append(keyword)
-    
-    if found_medical_terms:
-        print(f"Detected Medical Terms: {', '.join(set(found_medical_terms))}")
-    else:
-        print("No specific medical keywords detected in this text sample.")
+        # Call Ollama with the 'json' format parameter.
+        # This tells Ollama to expect and return a JSON string.
+        response = ollama.chat(
+            model='llama3',
+            messages=[
+                {
+                    'role': 'user',
+                    'content': prompt,
+                },
+            ],
+            options={
+                'temperature': 0.0 # Keep temperature low for factual extraction to reduce hallucination
+            },
+            stream=False, # Ensure we get the full JSON response at once
+            format='json' # This is crucial for Ollama to return JSON
+        )
 
-    print("\n--- Custom Rule-Based Extraction Example (using Matcher) ---")
-    # from spacy.matcher import Matcher # Already imported at the top for efficiency.
-    matcher = Matcher(nlp.vocab)
+        # Parse the JSON response from the model's content
+        try:
+            # The 'format="json"' parameter in ollama.chat makes response['message']['content']
+            # a string that needs to be parsed.
+            extracted_data = json.loads(response['message']['content'])
 
-    # Example: Find phrases like "starke Schmerzen" (strong pain)
-    # CORRECTED PATTERN: Use "POS": "ADJ" instead of "ADJ": {} directly
-    pattern = [{"POS": "ADJ", "LEMMA": {"IN": ["stark", "heftig", "chronisch"]}}, {"LEMMA": "Schmerz"}]
-    matcher.add("PAIN_INTENSITY", [pattern])
+            print("\n--- Extracted Information (Pandas Table) ---")
 
-    matches = matcher(doc)
-    if matches:
-        print("Detected pain intensity phrases:")
-        for match_id, start, end in matches:
-            span = doc[start:end] # The matched span of text
-            print(f"- '{span.text}' (Rule: {nlp.vocab.strings[match_id]})")
-    else:
-        print("No specific pain intensity phrases detected.")
+            # Prepare data for pandas DataFrame
+            questions = [
+                "Does the patient have endometriosis?",
+                "What is the patient's weight?",
+                "What is the patient's height?",
+                "Is Hypermenorrhea reported?",
+                "Is Metrorrhagia reported?"
+            ]
+            answers = [
+                extracted_data.get('endometriosis', '-'),
+                extracted_data.get('patient_weight', '-'),
+                extracted_data.get('patient_height', '-'),
+                extracted_data.get('hypermenorrhea_reported', '-'),
+                extracted_data.get('metrorrhagia_reported', '-')
+            ]
 
+            # Create a pandas DataFrame
+            df = pd.DataFrame({
+                'Question': questions,
+                'Answer': answers
+            })
 
-# --- Sample German Medical Report-like Text ---
-text_file_path = "textsample.txt"
-try:
-    with open(text_file_path, 'r', encoding='utf-8') as f:
-        text_from_file = f.read()
-    print(f"\nSuccessfully read text from: {text_file_path}")
-except FileNotFoundError:
-    print(f"Error: The file '{text_file_path}' was not found.")
-    text_from_file = "" # Set to empty to avoid error in analyze_german_text
-except Exception as e:
-    print(f"An error occurred while reading the file: {e}")
-    text_from_file = ""
-if text_from_file:
-    print("\n--- Analyzing Text from textsample.txt ---")
-    analyze_german_text(text_from_file)
+            # Print the DataFrame
+            print(df.to_string(index=False)) # .to_string(index=False) for a clean table without pandas index
 
-sample_text_2 = """
-Bericht vom 15. Juni 2025: Die Patientin wurde wegen anhaltendem Husten und leichtem Fieber vorgestellt.
-Es gab keine Hinweise auf eine Lungenentzündung. Die Medikamentenverordnung erfolgte.
-Sie fühlt sich heute etwas besser, aber noch nicht ganz fit.
-"""
+        except json.JSONDecodeError as e:
+            print(f"Error parsing JSON response from Llama 3: {e}")
+            print("Raw response content (likely not valid JSON):")
+            print(response['message']['content'])
+        except KeyError as e:
+            print(f"Error: Expected key '{e}' not found in the JSON response.")
+            print("Raw response content:")
+            print(response['message']['content'])
 
-# --- Run the analysis ---
-print("--- Analyzing Sample Text 1 ---")
-analyze_german_text(text_from_file)
+    except FileNotFoundError:
+        print(f"Error: The file '{text_file_path}' was not found.")
+    except Exception as e:
+        print(f"An unexpected error occurred: {e}")
 
-print("\n\n" + "="*70 + "\n\n")
+if __name__ == "__main__":
+    # --- Configuration ---
+    your_text_file = "sampletext.txt" # Make sure this file exists with your PDF content
+    # You no longer need to define the questions here as they are in the JSON prompt
 
-print("--- Analyzing Sample Text 2 ---")
-analyze_german_text(sample_text_2)
+    # --- Run the function ---
+    ask_llama_about_text_structured(your_text_file)
